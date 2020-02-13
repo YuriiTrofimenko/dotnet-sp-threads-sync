@@ -11,6 +11,8 @@ namespace ThreadSyncDemo
     {
         private static volatile string taskName1 = "N1";
         private static string taskName2 = "N2";
+        private static object syncObject = new object();
+
         static void Main(string[] args)
         {
             // v1
@@ -41,8 +43,39 @@ namespace ThreadSyncDemo
             new Thread(new ThreadStart(() => { MyTask(taskName2); })).Start(); */
 
             // v4
-            new Thread(new ParameterizedThreadStart(Program.MyTask)).Start(taskName1);
-            new Thread(new ParameterizedThreadStart(Program.MyTask)).Start(taskName2);
+            // new Thread(new ParameterizedThreadStart(Program.MyTask)).Start(taskName1);
+            // new Thread(new ParameterizedThreadStart(Program.MyTask)).Start(taskName2);
+
+            Data data = new Data();
+
+            Thread thread1 =
+                new Thread(new ThreadStart(() => {
+                    Actor actor = new Actor(data);
+                    for (int i = 0; i < 1000000; i++)
+                    {
+                        lock (syncObject) {
+                            Actor.IncreaseStatic();
+                            actor.Increase();
+                        }
+                    }
+                    Console.WriteLine($"#1: static count = {Data.countStatic}, count = {data.count}");
+                }));
+            thread1.Start();
+
+            Thread thread2 =
+                new Thread(new ThreadStart(() => {
+                    Actor actor = new Actor(data);
+                    for (int i = 0; i < 1000000; i++)
+                    {
+                        lock (syncObject)
+                        {
+                            Actor.IncreaseStatic();
+                            actor.Increase();
+                        }
+                    }
+                    Console.WriteLine($"#2: static count = {Data.countStatic}, count = {data.count}");
+                }));
+            thread2.Start();
         }
 
         /* static void MyTask() {
@@ -58,12 +91,12 @@ namespace ThreadSyncDemo
             }
         } */
 
-        static void MyTask(object _taskName)
+        /*static void MyTask(object _taskName)
         {
             for (int i = 0; i < 10; i++)
             {
                 Console.WriteLine(_taskName);
             }
-        }
+        }*/
     }
 }
