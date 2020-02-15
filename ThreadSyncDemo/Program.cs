@@ -11,8 +11,7 @@ namespace ThreadSyncDemo
     {
         private static volatile string taskName1 = "N1";
         private static string taskName2 = "N2";
-        private static object syncObject = new object();
-
+        private static Data data = new Data();
         static void Main(string[] args)
         {
             // v1
@@ -46,16 +45,17 @@ namespace ThreadSyncDemo
             // new Thread(new ParameterizedThreadStart(Program.MyTask)).Start(taskName1);
             // new Thread(new ParameterizedThreadStart(Program.MyTask)).Start(taskName2);
 
-            Data data = new Data();
-
             Thread thread1 =
                 new Thread(new ThreadStart(() => {
                     Actor actor = new Actor(data);
                     for (int i = 0; i < 1000000; i++)
                     {
-                        lock (syncObject) {
-                            Actor.IncreaseStatic();
+                        lock (data) {
                             actor.Increase();
+                        }
+                        lock (typeof(Data))
+                        {
+                            Actor.IncreaseStatic();
                         }
                     }
                     Console.WriteLine($"#1: static count = {Data.countStatic}, count = {data.count}");
@@ -67,15 +67,20 @@ namespace ThreadSyncDemo
                     Actor actor = new Actor(data);
                     for (int i = 0; i < 1000000; i++)
                     {
-                        lock (syncObject)
+                        lock (data)
+                        {
+                            actor.Increase();
+                        }
+                        lock (typeof(Data))
                         {
                             Actor.IncreaseStatic();
-                            actor.Increase();
                         }
                     }
                     Console.WriteLine($"#2: static count = {Data.countStatic}, count = {data.count}");
                 }));
             thread2.Start();
+
+            Console.ReadLine();
         }
 
         /* static void MyTask() {
