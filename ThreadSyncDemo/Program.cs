@@ -67,14 +67,12 @@ namespace ThreadSyncDemo
                     Actor actor = new Actor(data);
                     for (int i = 0; i < 1000000; i++)
                     {
-                        lock (data)
-                        {
-                            actor.Increase();
-                        }
-                        lock (typeof(Data))
-                        {
-                            Actor.IncreaseStatic();
-                        }
+                        Monitor.Enter(data);
+                        actor.Increase();
+                        Monitor.Exit(data);
+                        Monitor.Enter(typeof(Data));
+                        Actor.IncreaseStatic();
+                        Monitor.Exit(typeof(Data));
                     }
                     Console.WriteLine($"#2: static count = {Data.countStatic}, count = {data.count}");
                 }));
